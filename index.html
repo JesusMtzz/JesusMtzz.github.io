@@ -13,6 +13,217 @@
     <img style=" margin-left: auto; margin-right: auto; width: 50%; display: block;"  align="middle" src="https://i.ytimg.com/vi/uwCP6zx5gdo/hqdefault.jpg" alt="XD">
    <br>
     <iframe style="padding-left: 33%; padding-right: 33%;"  width="560" height="315" src="https://www.youtube.com/embed/RhKb8tHFYg8?autoplay=1&mute=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div>
+
+        <p>
+            CREATE TABLE Vendedor (
+    idVendedor bigint IDENTITY(1,1),
+    nombreVendedor varchar(255) not null,
+    apellido1Vendedor varchar(255) not null,
+    apellido2Vendedor varchar(255) not null,
+	ciudadVendedor varchar(255) not null,
+	comisionVendedor money,
+	PRIMARY KEY(idVendedor)
+);
+
+CREATE TABLE Cliente (
+    idCliente bigint IDENTITY(1,1),
+    nombreCliente varchar(255) not null,
+    apellido1Cliente varchar(255) not null,
+    apellido2Cliente varchar(255) not null,
+	ciudadCliente varchar(255) not null,
+	categoriaCliente varchar(255),
+	PRIMARY KEY(idCliente)
+);
+CREATE TABLE Producto (
+    idProducto bigint IDENTITY(1,1),
+    nombreProducto varchar(255) not null,
+    preciounitarioProducto money not null,
+    provedorProducto varchar(255) not null,
+	last_updateProducto date not null,
+
+	PRIMARY KEY(idProducto)
+);
+
+CREATE TABLE Pedido (
+    idPedido bigint IDENTITY(1,1) not null,
+	idPedidoCliente bigint FOREIGN KEY REFERENCES Cliente(idCliente) not null,
+	idPedidoVendedor bigint FOREIGN KEY REFERENCES Vendedor(idVendedor),
+	idPedidoProducto bigint FOREIGN KEY REFERENCES Producto(idProducto) not null,
+	fechaPedido date not null,
+	cantidadProducto float CHECK (cantidadProducto >= 0.01) not null,
+	importeProducto money,
+	PRIMARY KEY(idPedido)
+);
+
+
+ALTER TABLE Vendedor
+ADD sexoVendedor varchar(50); ;
+ALTER TABLE Vendedor
+ADD fechaNacimientoVendedor date;
+ALTER TABLE Vendedor
+ADD CONSTRAINT sexoCHECK CHECK (sexoVendedor = 'Hombre' OR sexoVendedor = 'Mujer');
+
+CREATE TABLE Comisiones (
+    id_vendedor bigint ,
+    comision_Ok money,
+    fechaVigenciaComision date not null,
+	PRIMARY KEY(id_vendedor)
+);
+UPDATE A set A.comisionVendedor = B.comision_Ok * 1.1
+FROM Vendedor A
+join Comisiones B
+ON A.idVendedor = B.id_vendedor
+WHERE A.ciudadVendedor = 'Monterrey';
+
+
+
+SELECT nombreCliente FROM Cliente
+WHERE (nombreCliente LIKE 'A%' AND nombreCliente LIKE '%n') AND nombreCliente LIKE 'P%'	
+order by nombreCliente asc;
+
+--SELECT nombre FROM Cliente
+--UNION 
+--SELECT nombre FROM Vendedor
+--order by nombre asc;
+
+--SELECT Pedido.idPedido, Cliente.nombre ,Cliente.apellido1,Cliente.apellido2,Vendedor.nombre,Vendedor.apellido1,Vendedor.apellido2
+--FROM Pedido
+--INNER JOIN CLiente ON Pedido.idCliente=Cliente.idCliente
+--INNER JOIN Vendedor ON Pedido.idVendedor = Vendedor.idVendedor;
+
+
+SELECT Cliente.idCliente,Cliente.nombreCliente,Cliente.apellido1Cliente,Cliente.apellido2Cliente,Pedido.fechaPedido,Pedido.importeProducto
+FROM Pedido
+INNER JOIN Cliente ON Pedido.idPedidoCliente=Cliente.idCliente
+INNER JOIN Producto ON Pedido.idPedidoProducto = Producto.idProducto
+
+
+
+
+SELECT Cliente.idCliente, CLiente.nombreCliente, Cliente.apellido1Cliente, Cliente.apellido2Cliente, Pedido.fechaPedido, max(Pedido.importeProducto)
+  FROM Cliente A INNER JOIN Pedido B ON A.idCliente = B.idPedidoCliente
+  GROUP BY A.idCliente, A.nombreCliente, A.apellido1Cliente, A.apellido2Cliente, B.fechaPedido;
+
+
+
+GO
+
+CREATE VIEW numerodepedidosclientes2 AS
+SELECT Cliente.id, Cliente.nombre, Cliente.apellido1, Cliente.apellido2
+GO
+CREATE VIEW numerodepedidosclientes AS 
+SELECT Cliente.idCliente, Cliente.nombreCliente, Cliente.apellido1Cliente, Cliente.apellido2Cliente, COUNT(Pedido.idPedido) AS[idpedido]
+FROM  Cliente A
+INNER JOIN Pedido B ON B.idPedidoCliente = A.idCliente
+GROUP BY A.idCliente, A.nombreCliente, A.apellido1Cliente, A.apellido2Cliente
+GO
+
+
+
+GO;
+CREATE OR ALTER FUNCTION dbo.importetotalcliente ( @clienteishonId int,@anio int)
+RETURNS money
+AS
+BEGIN
+DECLARE @importetotal money;
+SELECT @importetotal = SUM(Pedido.importeProducto) 
+FROM Cliente A INNER JOIN Pedido B ON  A.idCliente = B.idPedidoCliente
+WHERE A.idCliente = @clienteishonId AND YEAR(B.fechaPedido) = @anio
+RETURN @importetotal;
+END
+
+GO
+
+
+CREATE FUNCTION clientesdevendedor (@idVendedor bigint)
+  RETURNS TABLE
+  AS
+  RETURN
+  IF(@idVendedor is null){
+  
+  }
+  ELSE{
+  }
+  GO
+
+
+
+
+
+
+CREATE FUNCTION clientesdevendedor(@idVendedor BIGINT)
+RETURNS TABLE
+AS
+RETURN
+(
+SELECT Vendedor.nombreVendedor, Vendedor.apellido1Vendedor, Vendedor.apellido2Vendedor, 
+cliente.idCliente, Cliente.nombreCliente, Cliente.apellido1Cliente, Cliente.apellido2Cliente
+, isnull(count(Pedido.idPedido), 0)
+FROM Vendedor AS A
+JOIN Pedido AS B
+ON A.idVendedor = B.idPedidoVendedor
+JOIN Cliente as C
+ON C.idCliente = B.idPedidoCliente
+WHERE @idVendedor = A.idVendedor
+GROUP BY A.nombreVendedor, A.apellido1Vendedor, a.apellido2Vendedor,
+ C.idCliente, C.nombreCliente , C.apellido1Cliente, C.apellido2Cliente
+)
+
+
+
+CREATE PROCEDURE  procvendedor  (@id bigint ,@nombrevendedor varchar(255),@ape1 varchar(255),@ape2 varchar (255),
+@ciudad varchar(255), 
+@comision money,@sexo varchar (50), @nacimiento date, @op varchar(2)
+)
+AS
+  BEGIN  
+      IF @op = 'I'  
+        BEGIN  
+            INSERT INTO Vendedor  
+                        (
+                         nombreVendedor,  
+                         apellido1Vendedor,  
+                         apellido2Vendedor,  
+                         ciudadVendedor,
+						 comisionVendedor,
+						 sexoVendedor,
+						 fechaNacimientoVendedor)  
+            VALUES     ( @nombrevendedor,  
+                         @ape1,  
+                         @ape2,  
+                         @ciudad,  
+                         @comision,
+						 @sexo,
+						 @nacimiento
+						 )  
+        END  
+  
+      IF @op = 'S'  
+        BEGIN  
+            SELECT *  
+            FROM   Vendedor  
+        END  
+  
+      IF @op = 'U'  
+        BEGIN  
+            UPDATE vendedor  
+            SET    nombreVendedor = @nombrevendedor,  
+                   apellido1Vendedor = @ape1,  
+                   apellido2Vendedor = @ape2,  
+                   ciudadVendedor = @ciudad,
+				   comisionVendedor=  @comision,
+				   sexoVendedor = @sexo,
+				   fechaNacimientoVendedor =@nacimiento
+            WHERE  idVendedor = @id  
+        END  
+      ELSE IF @op = 'D'  
+        BEGIN  
+            DELETE FROM Vendedor  
+            WHERE  idVendedor = @id  
+        END  
+  END   
+GO;
+        </p>    
+    </div>
 </body>
 </html>
