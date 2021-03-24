@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>threeJS introduccion</title>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+	<!--<script src="https://ajax.googleapis.com/ajax/libs/threejs/r76/three.min.js"></script>
+	-->
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r71/three.js" ></script>
+
+	<script type="text/javascript">
+		//coleccion de objeto de threeJS
+		var	scene;
+		//dibuja los objetos de la escena
+		var renderer;
+		//una camara
+		var camera;
+
+		var SW = true;
+
+		$(document).ready(function(){
+			var tamanoDelCanvas = {
+				width: window.innerWidth,
+				height: window.innerHeight
+			}
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(tamanoDelCanvas.width,tamanoDelCanvas.height);
+			renderer.setClearColor(new THREE.Color(0,0,0));
+			//Inicializar la camara
+			camera = new THREE.PerspectiveCamera(
+				75,
+				tamanoDelCanvas.width/tamanoDelCanvas.height,
+				0.1,
+				100
+			);
+			//Inicializar la escena
+			scene = new	THREE.Scene();
+
+			//dibujamos un cubito(la geometria en threejs guarda la info de los vertices)
+			var geometria = new THREE.BoxGeometry(1,1,1);
+			//si cambiamos Basic por Lambert, le afectara la luz
+			var material = new THREE.MeshBasicMaterial({
+				color: new THREE.Color(0.8,0.3,0.6)
+			});
+
+			//mesh a partir de la geometria y el material(combiandolo)
+			var cubo = new THREE.Mesh(geometria,material);
+
+			//posicionamos la camara en un solo eje
+			camera.position.z = 2;
+			//posicionamos la camara en x,y,z. Funciona igual para rotacion y escala
+			camera.position.set(0,0,2);
+
+
+			var materialBrilloso = new THREE.MeshPhongMaterial({
+				color: new THREE.Color(0.5,0.5,0.5),
+				specular: new THREE.Color(1,1,1),
+				shininess: 50
+			});
+
+			var cubo2 = new THREE.Mesh(geometria,materialBrilloso);
+
+			cubo2.position.x = 0;
+			cubo.position.x = 0;
+
+
+			cubo.name = "Cubo01";
+			cubo2.name = "Cubo02";
+
+			//AGREGAMOS COSAS A LA ESCENA
+			scene.add(cubo);
+			scene.add(cubo2);
+
+
+			//----Iluminacion----//
+			var luzAmbiental = new	THREE.AmbientLight(
+				new THREE.Color(1,1,1),
+				1.0
+			);
+
+			var luzDireccional = new THREE.DirectionalLight(
+				new THREE.Color(1,1,0),
+				0.4
+			);
+			luzDireccional.position.set(0,0,1);	
+
+			scene.add(luzAmbiental);
+			scene.add(luzDireccional);
+
+
+
+			var cube3 = cubo2.clone();
+			cube3.position.set(0,1,0);
+			scene.add(cube3);
+
+
+
+			//Ponemos el canvas desde ThreeJS 
+			$("#scene-section").append(renderer.domElement);
+
+			render();
+		});
+
+		function render(){
+			requestAnimationFrame(render);
+
+			var valorAdd = 0.02;
+			var cubo01 = scene.getObjectByName("Cubo01");
+			var cubo02 = scene.getObjectByName("Cubo02");
+			var canvasS = scene.getObjectByName("canvasSize");
+
+			cubo01.rotation.y += THREE.Math.degToRad(1);
+			cubo02.rotation.y -= THREE.Math.degToRad(1);
+
+			if (SW) {
+				cubo01.position.x += valorAdd;
+				cubo02.position.x -= valorAdd;
+
+				if (cubo01.position.x >= window.innerWidth/window.innerHeight) {
+					SW = false;
+				}
+			}else{
+
+				cubo01.position.x -= valorAdd;
+				cubo02.position.x += valorAdd;
+
+				if (cubo01.position.x <= -(window.innerWidth/window.innerHeight)) {
+					SW = true;s
+				}
+
+			}
+
+
+			renderer.render(scene,camera);
+		}
+
+
+	</script>
+
+</head>
+<body>
+	<div id="scene-section"></div>
+</body>
+</html>
